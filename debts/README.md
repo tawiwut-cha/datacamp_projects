@@ -10,3 +10,5 @@ The bank has implemented different recovery strategies at different thresholds (
 The big question: does the extra amount that is recovered at the higher strategy level exceed the extra $50 in costs? In other words, was there a jump (also called a "discontinuity") of more than $50 in the amount recovered at the higher strategy level?
 
 https://learn.datacamp.com/projects/504
+
+test

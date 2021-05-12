@@ -11,4 +11,5 @@ The big question: does the extra amount that is recovered at the higher strategy
 
 https://learn.datacamp.com/projects/504
 
-test
+Relevant reads:
+https://jrnold.github.io/intro-methods-notes/regression-discontinuity.html

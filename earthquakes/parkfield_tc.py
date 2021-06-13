@@ -91,7 +91,7 @@ df = df.sort_values(by='time', ascending=True)
 # calculate time diff between consecutive earthquakes
 time_between_eqs = df.time.diff().dropna() # or กรรมกร (df.time - df.time.shift(1))[1:]
 # filter our aftershocks
-aftershock_threshold = pd.Timedelta(days=50)
+aftershock_threshold = pd.Timedelta(days=100)
 time_between_eqs = time_between_eqs[time_between_eqs >= aftershock_threshold]
 # describe
 display(time_between_eqs.describe())
@@ -131,6 +131,7 @@ print('Expected value of time between earthquakes is {} days with 95% ci {}'.for
 # %% [markdown]
 # Third part: Underlying distribution of time between earthquakes<br>
 # We will use the K-S test to test whether the data at hand is different from theoretical distributions (normal or exponential)
+# 
 
 # %%
 # 1. Calculate parameters from our data to use for the hypothesized distribution 
@@ -166,10 +167,26 @@ def ks_stat(data1, data2):
     D_bottom = cdf - y + 1/len(data1)
 
     return np.max((D_top, D_bottom))
+def draw_ks_reps(n, f, args=(), size=10000, n_reps=10000):
+    # Generate samples from target distribution
+    x_f = f(*args, size=size)
+    
+    # Initialize K-S replicates
+    reps = np.empty(n_reps)
+    
+    # Draw replicates
+    for i in range(n_reps):
+        # Draw samples for comparison
+        x_samp = f(*args, size=n)
+        
+        # Compute K-S statistic
+        reps[i] = dcst.ks_stat(x_samp, x_f)
+
+    return reps
 
 
 # %%
-# x. Theoretical distribution is normal
+# 4. Theoretical distribution is normal
 '''
 Null hypothesis: The underlying distribution is normal with the parameters as calculated from the data
 Test statistic: K-S stat (max distance between the data ecdf and theoretical cdf)
@@ -177,35 +194,29 @@ At least extreme as: the observed K-S stat
 '''
 # Simulate null hypothesis
 theo_normal = np.random.normal(mean_days_between_earthquakes, std_days_between_earthquakes, 10000)
-# Calculate bs reps of the test statistic
-n = 10000
-bs_reps = np.empty(n)
-for i in range(n):
-    bs_sample = np.random.normal(mean_days_between_earthquakes, std_days_between_earthquakes, len(days_between_eqs))
-    bs_reps[i] = ks_stat(bs_sample, theo_normal)
 # Calculate observed test statistic
 ks_obs = ks_stat(days_between_eqs, theo_normal)
 print('Observed test statistic: {}'.format(ks_obs))
+# Calculate bs reps of the test statistic
+ks_reps = draw_ks_reps(len(days_between_eqs), np.random.normal, args=(mean_days_between_earthquakes, std_days_between_earthquakes))
 # Calculate p-value
-p_value = sum(bs_reps >= ks_obs) / len(bs_reps)
+p_value = sum(ks_reps >= ks_obs) / len(ks_reps)
 print('P-value = {}'.format(p_value))
 
 
 # %%
-# x. Theoretical distribution is exponential
+# 5. Theoretical distribution is exponential
 # Simulate null hypothesis
 theo_exp = np.random.exponential(mean_days_between_earthquakes, 10000)
-# Calculate bs reps of the test statistic
-n = 10000
-bs_reps = np.empty(n)
-for i in range(n):
-    bs_sample = np.random.exponential(mean_days_between_earthquakes, len(days_between_eqs))
-    bs_reps[i] = ks_stat(bs_sample, theo_exp)
 # Calculate observed test statistic
 ks_obs = ks_stat(days_between_eqs, theo_exp)
 print('Observed test statistic: {}'.format(ks_obs))
+# Calculate bs reps of the test statistic
+ks_reps = draw_ks_reps(len(days_between_eqs), np.random.exponential, args=(mean_days_between_earthquakes,))
 # Calculate p-value
 p_value = sum(bs_reps >= ks_obs) / len(bs_reps)
 print('P-value = {}'.format(p_value))
 
+# %% [markdown]
+# We cannot reject the null hypothesis in both cases
 
